@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Connexion</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial; background: #1a1a2e; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .card { background: #16213e; padding: 40px; border-radius: 12px; width: 380px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo h1 { color: #e94560; font-size: 24px; }
+        .logo p { color: #aaa; font-size: 13px; margin-top: 5px; }
+        label { color: #aaa; font-size: 13px; display: block; margin-bottom: 5px; }
+        input { width: 100%; padding: 12px; background: #0f3460; border: 1px solid #e94560; border-radius: 8px; color: white; font-size: 14px; margin-bottom: 20px; outline: none; }
+        input:focus { border-color: #fff; }
+        button { width: 100%; padding: 12px; background: #e94560; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #c73652; }
+        .link { text-align: center; margin-top: 20px; color: #aaa; font-size: 13px; }
+        .link a { color: #e94560; text-decoration: none; }
+        #message { color: #e94560; text-align: center; font-size: 13px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo">
+            <h1>🏛️ PatrimoineApp</h1>
+            <p>Gestion des patrimoines</p>
+        </div>
+        <p id="message"></p>
+        <label>Nom d'utilisateur</label>
+        <input type="text" id="username" placeholder="Entrez votre nom d'utilisateur" />
+        <label>Mot de passe</label>
+        <input type="password" id="password" placeholder="Entrez votre mot de passe" />
+        <button onclick="login()">Se connecter</button>
+        <div class="link">
+            Pas encore de compte ? <a href="/page/register">Créer un compte</a>
+        </div>
+    </div>
+    <script>
+      async function login() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+    const msg = document.getElementById("message");
+
+    if (!username || !password) {
+        msg.innerText = "Veuillez remplir tous les champs !";
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("username", username);
+    formData.append("password", password);
+
+    const response = await fetch("/login", { method: "POST", body: formData });
+    const data = await response.json();
+
+    if (response.ok) {
+        localStorage.setItem("token", data.access_token);
+        window.location.href = "/page/dashboard";
+    } else {
+        // Messages personnalisés selon l'erreur
+        if (data.detail.includes("3")) {
+            msg.innerText = "⛔ Compte bloqué après 3 tentatives échouées. Contactez l'administrateur.";
+            msg.style.color = "#e74c3c";
+        } else if (data.detail.includes("désactivé")) {
+            msg.innerText = "🚫 Votre compte est désactivé. Contactez l'administrateur.";
+            msg.style.color = "#e74c3c";
+        } else if (data.detail.includes("incorrect")) {
+            // Extraire le nombre de tentatives depuis le message
+            const tentatives = data.detail.match(/\d+/);
+            const restantes = tentatives ? 3 - parseInt(tentatives[0]) : "?";
+            msg.innerText = `❌ Mot de passe incorrect. Il vous reste ${restantes} tentative(s).`;
+            msg.style.color = "#f39c12";
+        } else {
+            msg.innerText = `❌ ${data.detail}`;
+            msg.style.color = "#e94560";
+        }
+    }
+}  
+    </script>
+</body>
+</html>

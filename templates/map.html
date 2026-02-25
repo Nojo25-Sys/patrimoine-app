@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Carte des patrimoines</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial; background: #1a1a2e; color: white; }
+        nav { background: #16213e; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e94560; }
+        nav h1 { color: #e94560; font-size: 20px; }
+        nav div a { color: #aaa; text-decoration: none; margin-left: 20px; font-size: 14px; }
+        nav div a:hover { color: #e94560; }
+        .controls { background: #16213e; padding: 15px 30px; display: flex; gap: 15px; align-items: center; border-bottom: 1px solid #333; }
+        input, select { padding: 8px 12px; background: #0f3460; border: 1px solid #333; border-radius: 8px; color: white; font-size: 14px; outline: none; }
+        button { padding: 8px 18px; background: #e94560; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
+        button:hover { background: #c73652; }
+        #map { height: calc(100vh - 120px); width: 100%; }
+    </style>
+</head>
+<body>
+<nav>
+    <h1>🏛️ PatrimoineApp</h1>
+    <div>
+        <a href="/page/dashboard">Dashboard</a>
+        <a href="/page/map">🗺️ Carte</a>
+        <a href="#" onclick="logout()">Déconnexion</a>
+    </div>
+</nav>
+
+<div class="controls">
+    <input type="text" id="filtreVille" placeholder="Filtrer par ville" />
+    <select id="filtreType">
+        <option value="">-- Tous les types --</option>
+        <option>Bâtiment</option>
+        <option>Terrain</option>
+        <option>Infrastructure</option>
+        <option>Monument</option>
+    </select>
+    <button onclick="chargerCartes()">🔍 Afficher</button>
+    <button onclick="chargerCartes()">🗺️ Tous</button>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const token = localStorage.getItem("token");
+    if (!token) window.location.href = "/page/login";
+
+    const map = L.map("map").setView([6.1375, 1.2123], 12);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap"
+    }).addTo(map);
+
+    let markers = [];
+
+    async function chargerCartes() {
+        const ville = document.getElementById("filtreVille").value;
+        const type = document.getElementById("filtreType").value;
+
+        let url = ville ? `/patrimoines/ville/${ville}` : `/patrimoines/`;
+        const response = await fetch(url, { headers: { "Authorization": `Bearer ${token}` } });
+        let data = await response.json();
+
+        if (type) data = data.filter(p => p.type === type);
+
+        // Supprimer anciens marqueurs
+        markers.forEach(m => map.removeLayer(m));
+        markers = [];
+
+        if (data.length === 0) return;
+
+        data.forEach(p => {
+            const marker = L.marker([p.latitude, p.longitude])
+                .addTo(map)
+                .bindPopup(`
+                    <b style="color:#e94560">${p.nom}</b><br>
+                    <b>Type:</b> ${p.type}<br>
+                    <b>Ville:</b> ${p.ville}<br>
+                    <b>GPS:</b> ${p.latitude}, ${p.longitude}
+                `);
+            markers.push(marker);
+        });
+
+        // Centrer la carte sur le premier patrimoine
+        map.setView([data[0].latitude, data[0].longitude], 13);
+    }
+
+    function logout() {
+        localStorage.removeItem("token");
+        window.location.href = "/page/login";
+    }
+
+    chargerCartes();
+</script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mon Profil</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial; background: #1a1a2e; color: white; }
+        nav { background: #16213e; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e94560; }
+        nav h1 { color: #e94560; font-size: 20px; }
+        nav div a { color: #aaa; text-decoration: none; margin-left: 20px; font-size: 14px; }
+        nav div a:hover { color: #e94560; }
+        .container { max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        .card { background: #16213e; padding: 30px; border-radius: 12px; margin-bottom: 25px; }
+        .card h2 { color: #e94560; margin-bottom: 20px; font-size: 18px; }
+        .avatar { width: 80px; height: 80px; background: #e94560; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 35px; margin: 0 auto 20px; }
+        .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #333; font-size: 14px; }
+        .info-row span:first-child { color: #aaa; }
+        .info-row span:last-child { color: white; font-weight: bold; }
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; }
+        .badge-active { background: #2ecc71; color: white; }
+        .badge-inactive { background: #e74c3c; color: white; }
+        label { color: #aaa; font-size: 13px; display: block; margin-bottom: 5px; margin-top: 15px; }
+        input { width: 100%; padding: 12px; background: #0f3460; border: 1px solid #333; border-radius: 8px; color: white; font-size: 14px; outline: none; margin-bottom: 5px; }
+        input:focus { border-color: #e94560; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; margin-top: 15px; width: 100%; }
+        .btn-primary { background: #e94560; color: white; }
+        .btn-primary:hover { background: #c73652; }
+        .alert { display: none; padding: 12px 20px; border-radius: 8px; font-size: 14px; margin-bottom: 15px; text-align: center; }
+        .alert.success { background: #2ecc71; color: white; display: block; }
+        .alert.error { background: #e74c3c; color: white; display: block; }
+        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
+        .stat-box { background: #0f3460; padding: 20px; border-radius: 10px; text-align: center; }
+        .stat-box h3 { color: #e94560; font-size: 28px; }
+        .stat-box p { color: #aaa; font-size: 13px; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <h1>🏛️ PatrimoineApp</h1>
+    <div>
+        <a href="/page/dashboard">Dashboard</a>
+        <a href="/page/map">🗺️ Carte</a>
+        <a href="/page/profil">👤 Profil</a>
+        <a href="#" onclick="logout()">Déconnexion</a>
+    </div>
+</nav>
+
+<div class="container">
+
+    <!-- Infos profil -->
+    <div class="card">
+        <div class="avatar">👤</div>
+        <p id="alertMsg" class="alert"></p>
+
+        <div class="info-row">
+            <span>Nom d'utilisateur</span>
+            <span id="infoUsername">-</span>
+        </div>
+        <div class="info-row">
+            <span>Email</span>
+            <span id="infoEmail">-</span>
+        </div>
+        <div class="info-row">
+            <span>Statut du compte</span>
+            <span id="infoStatut">-</span>
+        </div>
+        <div class="info-row">
+            <span>Membre depuis</span>
+            <span id="infoDate">-</span>
+        </div>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="card">
+        <h2>📊 Mes statistiques</h2>
+        <div class="stats">
+            <div class="stat-box">
+                <h3 id="totalPatrimoines">0</h3>
+                <p>Patrimoines enregistrés</p>
+            </div>
+            <div class="stat-box">
+                <h3 id="totalVilles">0</h3>
+                <p>Villes couvertes</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modifier email -->
+    <div class="card">
+        <h2>✏️ Modifier mes informations</h2>
+        <label>Nouvel email</label>
+        <input type="email" id="newEmail" placeholder="Entrez votre nouvel email" />
+        <button class="btn btn-primary" onclick="modifierEmail()">Mettre à jour</button>
+    </div>
+
+</div>
+
+<script>
+    const token = localStorage.getItem("token");
+    if (!token) window.location.href = "/page/login";
+    const headers = { "Authorization": `Bearer ${token}` };
+
+    function showAlert(message, type) {
+        const alert = document.getElementById("alertMsg");
+        alert.innerText = message;
+        alert.className = `alert ${type}`;
+        setTimeout(() => alert.className = "alert", 3000);
+    }
+
+    async function chargerProfil() {
+        const response = await fetch("/users/me", { headers });
+        if (!response.ok) {
+            window.location.href = "/page/login";
+            return;
+        }
+        const data = await response.json();
+
+        document.getElementById("infoUsername").innerText = data.username;
+        document.getElementById("infoEmail").innerText = data.email;
+        document.getElementById("infoStatut").innerHTML = data.is_active
+            ? `<span class="badge badge-active">✅ Actif</span>`
+            : `<span class="badge badge-inactive">❌ Désactivé</span>`;
+        document.getElementById("infoDate").innerText = new Date(data.created_at).toLocaleDateString("fr-FR");
+    }
+
+    async function chargerStats() {
+        const response = await fetch("/patrimoines/", { headers });
+        const data = await response.json();
+
+        document.getElementById("totalPatrimoines").innerText = data.length;
+        const villes = new Set(data.map(p => p.ville));
+        document.getElementById("totalVilles").innerText = villes.size;
+    }
+
+    async function modifierEmail() {
+        const newEmail = document.getElementById("newEmail").value;
+        if (!newEmail) {
+            showAlert("Veuillez entrer un email !", "error");
+            return;
+        }
+
+        const response = await fetch(`/users/email?new_email=${newEmail}`, {
+            method: "PATCH",
+            headers
+        });
+
+        if (response.ok) {
+            showAlert("Email modifié avec succès !", "success");
+            chargerProfil();
+        } else {
+            const data = await response.json();
+            showAlert(data.detail, "error");
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem("token");
+        window.location.href = "/page/login";
+    }
+
+    chargerProfil();
+    chargerStats();
+</script>
+</body>
+</html>

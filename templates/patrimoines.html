@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Patrimoines</title>
+    <style>
+        body { font-family: Arial; background: #f0f0f0; margin: 0; }
+        nav { background: #2c3e50; padding: 15px; color: white; }
+        nav a { color: white; margin-right: 20px; text-decoration: none; }
+        .container { max-width: 900px; margin: 40px auto; background: white; padding: 30px; border-radius: 10px; }
+        input, select { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 5px; }
+        button { background: #2c3e50; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: #2c3e50; color: white; padding: 10px; }
+        td { padding: 10px; border-bottom: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/">Accueil</a>
+        <a href="/page/patrimoines">Patrimoines</a>
+        <a href="#" onclick="logout()">Déconnexion</a>
+    </nav>
+    <div class="container">
+        <h2>Ajouter un patrimoine</h2>
+        <input type="text" id="nom" placeholder="Nom" />
+        <select id="type">
+            <option>Bâtiment</option>
+            <option>Terrain</option>
+            <option>Infrastructure</option>
+        </select>
+        <input type="text" id="ville" placeholder="Ville" />
+        <input type="number" id="latitude" placeholder="Latitude" step="any" />
+        <input type="number" id="longitude" placeholder="Longitude" step="any" />
+        <button onclick="ajouterPatrimoine()">Ajouter</button>
+
+        <h2>Rechercher par ville</h2>
+        <input type="text" id="rechercheVille" placeholder="Ville" />
+        <button onclick="rechercher()">Rechercher</button>
+        <button onclick="exporterPDF()">Exporter PDF</button>
+        <button onclick="exporterGPX()">Exporter GPX</button>
+
+        <table>
+            <thead>
+                <tr><th>Nom</th><th>Type</th><th>Ville</th><th>Latitude</th><th>Longitude</th></tr>
+            </thead>
+            <tbody id="tableau"></tbody>
+        </table>
+    </div>
+    <script>
+        const token = localStorage.getItem("token");
+        if (!token) window.location.href = "/page/login";
+
+        const headers = { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" };
+
+        async function ajouterPatrimoine() {
+            const data = {
+                nom: document.getElementById("nom").value,
+                type: document.getElementById("type").value,
+                ville: document.getElementById("ville").value,
+                latitude: parseFloat(document.getElementById("latitude").value),
+                longitude: parseFloat(document.getElementById("longitude").value)
+            };
+            await fetch("/patrimoines/", { method: "POST", headers, body: JSON.stringify(data) });
+            rechercher();
+        }
+
+       async function rechercher() {
+    const ville = document.getElementById("rechercheVille").value;
+    let url = ville ? `/patrimoines/ville/${ville}` : `/patrimoines/`;
+    
+    const response = await fetch(url, { headers });
+    const data = await response.json();
+    const tbody = document.getElementById("tableau");
+    tbody.innerHTML = "";
+    data.forEach(p => {
+        tbody.innerHTML += `<tr><td>${p.nom}</td><td>${p.type}</td><td>${p.ville}</td><td>${p.latitude}</td><td>${p.longitude}</td></tr>`;
+    });
+} 
+
+
+async function ajouterPatrimoine() {
+    const data = {
+        nom: document.getElementById("nom").value,
+        type: document.getElementById("type").value,
+        ville: document.getElementById("ville").value,
+        latitude: parseFloat(document.getElementById("latitude").value),
+        longitude: parseFloat(document.getElementById("longitude").value)
+    };
+    await fetch("/patrimoines/", { method: "POST", headers, body: JSON.stringify(data) });
+    
+    // Mettre automatiquement la ville dans le champ recherche et afficher
+    document.getElementById("rechercheVille").value = data.ville;
+    rechercher();
+}
+
+        function exporterPDF() {
+            const ville = document.getElementById("rechercheVille").value;
+            window.open(`/exports/pdf/${ville}`, "_blank");
+        }
+
+        function exporterGPX() {
+            const ville = document.getElementById("rechercheVille").value;
+            window.open(`/exports/gpx/${ville}`, "_blank");
+        }
+
+        function logout() {
+            localStorage.removeItem("token");
+            window.location.href = "/page/login";
+        }
+    </script>
+</body>
+</html>

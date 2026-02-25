@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial; background: #1a1a2e; color: white; }
+        nav { background: #16213e; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e94560; }
+        nav h1 { color: #e94560; font-size: 20px; }
+        nav div a { color: #aaa; text-decoration: none; margin-left: 20px; font-size: 14px; }
+        nav div a:hover { color: #e94560; }
+        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+
+        /* Formulaire ajout */
+        .form-section { background: #16213e; padding: 25px; border-radius: 12px; margin-bottom: 30px; }
+        .form-section h2 { color: #e94560; margin-bottom: 20px; font-size: 18px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+        input, select { width: 100%; padding: 10px; background: #0f3460; border: 1px solid #333; border-radius: 8px; color: white; font-size: 14px; outline: none; }
+        input:focus, select:focus { border-color: #e94560; }
+        select option { background: #0f3460; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
+        .btn-primary { background: #e94560; color: white; }
+        .btn-primary:hover { background: #c73652; }
+        .btn-success { background: #2ecc71; color: white; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-warning { background: #f39c12; color: white; }
+        .btn-info { background: #3498db; color: white; }
+
+        /* Filtres */
+        .filter-section { background: #16213e; padding: 20px 25px; border-radius: 12px; margin-bottom: 30px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        .filter-section h2 { color: #e94560; font-size: 16px; width: 100%; margin-bottom: 5px; }
+
+        /* Tableau */
+        .table-section { background: #16213e; padding: 25px; border-radius: 12px; }
+        .table-section h2 { color: #e94560; margin-bottom: 20px; font-size: 18px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #0f3460; color: #e94560; padding: 12px; text-align: left; font-size: 13px; }
+        td { padding: 12px; border-bottom: 1px solid #333; font-size: 13px; color: #ccc; }
+        tr:hover td { background: #0f3460; }
+        .actions { display: flex; gap: 8px; }
+
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: #16213e; padding: 30px; border-radius: 12px; width: 450px; border: 1px solid #e94560; }
+        .modal-content h3 { color: #e94560; margin-bottom: 20px; }
+        .modal-content input, .modal-content select { margin-bottom: 15px; }
+        .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; }
+
+        /* Alert */
+        .alert { display: none; position: fixed; top: 20px; right: 20px; padding: 15px 25px; border-radius: 8px; font-size: 14px; z-index: 2000; }
+        .alert.success { background: #2ecc71; color: white; display: block; }
+        .alert.error { background: #e74c3c; color: white; display: block; }
+
+        /* Photo */
+        .photo-thumb { width: 40px; height: 40px; border-radius: 5px; object-fit: cover; }
+    </style>
+</head>
+<body>
+
+<div id="alert" class="alert"></div>
+
+<nav>
+    <h1>🏛️ PatrimoineApp</h1>
+    <div>
+        <a href="/page/dashboard">Dashboard</a>
+        <a href="/page/map">🗺️ Carte</a>
+        <a href="#" onclick="logout()">Déconnexion</a>
+    </div>
+</nav>
+
+<div class="container">
+
+    <!-- Formulaire ajout -->
+    <div class="form-section">
+        <h2>➕ Ajouter un patrimoine</h2>
+        <div class="form-grid">
+            <input type="text" id="nom" placeholder="Nom du patrimoine" />
+            <select id="type">
+                <option value="">-- Type --</option>
+                <option>Bâtiment</option>
+                <option>Terrain</option>
+                <option>Infrastructure</option>
+                <option>Monument</option>
+            </select>
+            <input type="text" id="ville" placeholder="Ville" />
+            <input type="number" id="latitude" placeholder="Latitude (ex: 6.1375)" step="any" />
+            <input type="number" id="longitude" placeholder="Longitude (ex: 1.2123)" step="any" />
+            <button class="btn btn-primary" onclick="ajouterPatrimoine()">Ajouter</button>
+        </div>
+    </div>
+
+    <!-- Filtres -->
+    <div class="filter-section">
+        <h2>🔍 Rechercher</h2>
+        <input type="text" id="filtreVille" placeholder="Filtrer par ville" style="width:200px" />
+        <select id="filtreType" style="width:200px">
+            <option value="">-- Tous les types --</option>
+            <option>Bâtiment</option>
+            <option>Terrain</option>
+            <option>Infrastructure</option>
+            <option>Monument</option>
+        </select>
+        <button class="btn btn-primary" onclick="chargerPatrimoines()">Rechercher</button>
+        <button class="btn btn-success" onclick="exporterPDF()">📄 Export PDF</button>
+        <button class="btn btn-info" onclick="exporterGPX()">📍 Export GPX</button>
+        <input type="email" id="emailDest" placeholder="Email destinataire" style="width:220px" />
+        <button class="btn btn-warning" onclick="envoyerGPX()">📧 Envoyer GPX</button>
+    </div>
+
+    <!-- Tableau -->
+    <div class="table-section">
+        <h2>📋 Liste des patrimoines</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Photo</th>
+                    <th>Nom</th>
+                    <th>Type</th>
+                    <th>Ville</th>
+                    <th>Latitude</th>
+                    <th>Longitude</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tableau"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Modification -->
+<div class="modal" id="modalEdit">
+    <div class="modal-content">
+        <h3>✏️ Modifier le patrimoine</h3>
+        <input type="hidden" id="editId" />
+        <input type="text" id="editNom" placeholder="Nom" />
+        <select id="editType">
+            <option>Bâtiment</option>
+            <option>Terrain</option>
+            <option>Infrastructure</option>
+            <option>Monument</option>
+        </select>
+        <input type="text" id="editVille" placeholder="Ville" />
+        <input type="number" id="editLatitude" placeholder="Latitude" step="any" />
+        <input type="number" id="editLongitude" placeholder="Longitude" step="any" />
+        <div class="modal-buttons">
+            <button class="btn btn-danger" onclick="fermerModal()">Annuler</button>
+            <button class="btn btn-success" onclick="sauvegarderModification()">Sauvegarder</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Upload Photo -->
+<div class="modal" id="modalPhoto">
+    <div class="modal-content">
+        <h3>📷 Uploader une photo</h3>
+        <input type="hidden" id="photoId" />
+        <input type="file" id="photoFile" accept="image/*" style="padding:10px; margin-bottom:15px;" />
+        <div class="modal-buttons">
+            <button class="btn btn-danger" onclick="fermerModalPhoto()">Annuler</button>
+            <button class="btn btn-success" onclick="uploadPhoto()">Uploader</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem("token");
+    if (!token) window.location.href = "/page/login";
+    const headers = { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" };
+
+    function showAlert(message, type) {
+        const alert = document.getElementById("alert");
+        alert.innerText = message;
+        alert.className = `alert ${type}`;
+        setTimeout(() => alert.className = "alert", 3000);
+    }
+
+    async function chargerPatrimoines() {
+        const ville = document.getElementById("filtreVille").value;
+        const type = document.getElementById("filtreType").value;
+
+        let url = ville ? `/patrimoines/ville/${ville}` : `/patrimoines/`;
+        const response = await fetch(url, { headers: { "Authorization": `Bearer ${token}` } });
+        let data = await response.json();
+
+        if (type) data = data.filter(p => p.type === type);
+
+        const tbody = document.getElementById("tableau");
+        tbody.innerHTML = "";
+
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#aaa;">Aucun patrimoine trouvé</td></tr>`;
+            return;
+        }
+
+        data.forEach(p => {
+            const photo = p.photo_path
+                ? `<img src="/${p.photo_path}" class="photo-thumb" />`
+                : `<span style="color:#555">Aucune</span>`;
+            tbody.innerHTML += `
+                <tr>
+                    <td>${photo}</td>
+                    <td>${p.nom}</td>
+                    <td>${p.type}</td>
+                    <td>${p.ville}</td>
+                    <td>${p.latitude}</td>
+                    <td>${p.longitude}</td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn btn-warning" onclick="ouvrirModal(${p.id}, '${p.nom}', '${p.type}', '${p.ville}', ${p.latitude}, ${p.longitude})">✏️</button>
+                            <button class="btn btn-danger" onclick="supprimerPatrimoine(${p.id})">🗑️</button>
+                            <button class="btn btn-info" onclick="ouvrirModalPhoto(${p.id})">📷</button>
+                            <button class="btn btn-success" onclick="exporterUnPDF(${p.id})">📄</button>
+                        </div>
+                    </td>
+                </tr>`;
+        });
+    }
+
+    async function ajouterPatrimoine() {
+        const data = {
+            nom: document.getElementById("nom").value,
+            type: document.getElementById("type").value,
+            ville: document.getElementById("ville").value,
+            latitude: parseFloat(document.getElementById("latitude").value),
+            longitude: parseFloat(document.getElementById("longitude").value)
+        };
+
+        if (!data.nom || !data.type || !data.ville || isNaN(data.latitude) || isNaN(data.longitude)) {
+            showAlert("Veuillez remplir tous les champs !", "error");
+            return;
+        }
+
+        const response = await fetch("/patrimoines/", { method: "POST", headers, body: JSON.stringify(data) });
+
+        if (response.ok) {
+            showAlert("Patrimoine ajouté avec succès !", "success");
+            document.getElementById("filtreVille").value = data.ville;
+            chargerPatrimoines();
+        } else {
+            showAlert("Erreur lors de l'ajout !", "error");
+        }
+    }
+
+    function ouvrirModal(id, nom, type, ville, lat, lng) {
+        document.getElementById("editId").value = id;
+        document.getElementById("editNom").value = nom;
+        document.getElementById("editType").value = type;
+        document.getElementById("editVille").value = ville;
+        document.getElementById("editLatitude").value = lat;
+        document.getElementById("editLongitude").value = lng;
+        document.getElementById("modalEdit").classList.add("active");
+    }
+
+    function fermerModal() {
+        document.getElementById("modalEdit").classList.remove("active");
+    }
+
+    async function sauvegarderModification() {
+        const id = document.getElementById("editId").value;
+        const data = {
+            nom: document.getElementById("editNom").value,
+            type: document.getElementById("editType").value,
+            ville: document.getElementById("editVille").value,
+            latitude: parseFloat(document.getElementById("editLatitude").value),
+            longitude: parseFloat(document.getElementById("editLongitude").value)
+        };
+
+        const response = await fetch(`/patrimoines/${id}`, { method: "PUT", headers, body: JSON.stringify(data) });
+
+        if (response.ok) {
+            showAlert("Patrimoine modifié avec succès !", "success");
+            fermerModal();
+            chargerPatrimoines();
+        } else {
+            showAlert("Erreur lors de la modification !", "error");
+        }
+    }
+
+    async function supprimerPatrimoine(id) {
+        if (!confirm("⚠️ Êtes-vous sûr de vouloir supprimer ce patrimoine ?")) return;
+
+        const response = await fetch(`/patrimoines/${id}`, {
+            method: "DELETE",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            showAlert("Patrimoine supprimé !", "success");
+            chargerPatrimoines();
+        } else {
+            showAlert("Erreur lors de la suppression !", "error");
+        }
+    }
+
+    function ouvrirModalPhoto(id) {
+        document.getElementById("photoId").value = id;
+        document.getElementById("modalPhoto").classList.add("active");
+    }
+
+    function fermerModalPhoto() {
+        document.getElementById("modalPhoto").classList.remove("active");
+    }
+
+    async function uploadPhoto() {
+        const id = document.getElementById("photoId").value;
+        const fileInput = document.getElementById("photoFile");
+
+        if (!fileInput.files[0]) {
+            showAlert("Veuillez sélectionner une photo !", "error");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        const response = await fetch(`/patrimoines/${id}/photo`, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${token}` },
+            body: formData
+        });
+
+        if (response.ok) {
+            showAlert("Photo uploadée avec succès !", "success");
+            fermerModalPhoto();
+            chargerPatrimoines();
+        } else {
+            showAlert("Erreur lors de l'upload !", "error");
+        }
+    }
+
+    async function exporterUnPDF(id) {
+    const response = await fetch(`/exports/pdf/patrimoine/${id}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `patrimoine_${id}.pdf`;
+        a.click();
+    } else {
+        showAlert("Erreur lors de l'export !", "error");
+    }
+}
+
+async function exporterGPX() {
+    const ville = document.getElementById("filtreVille").value || "tous";
+    const response = await fetch(`/exports/gpx/${ville}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${ville}.gpx`;
+        a.click();
+    } else {
+        showAlert("Erreur lors de l'export GPX !", "error");
+    }
+}
+
+
+async function envoyerGPX() {
+    const ville = document.getElementById("filtreVille").value;
+    const email = document.getElementById("emailDest").value;
+
+    if (!ville) {
+        showAlert("Veuillez entrer une ville !", "error");
+        return;
+    }
+    if (!email) {
+        showAlert("Veuillez entrer un email !", "error");
+        return;
+    }
+
+    const response = await fetch(`/exports/mail/${ville}?email_dest=${email}`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+
+    if (response.ok) {
+        showAlert(`Fichier GPX envoyé à ${email} !`, "success");
+    } else {
+        showAlert("Erreur lors de l'envoi du mail !", "error");
+    }
+}
+
+    function logout() {
+        localStorage.removeItem("token");
+        window.location.href = "/page/login";
+    }
+
+async function exporterPDF() {
+    const ville = document.getElementById("filtreVille").value;
+    if (!ville) {
+        showAlert("Veuillez entrer une ville !", "error");
+        return;
+    }
+    const response = await fetch(`/exports/pdf/${ville}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${ville}_patrimoines.pdf`;
+        a.click();
+    } else {
+        showAlert("Erreur lors de l'export PDF !", "error");
+    }
+}
+
+async function exporterGPX() {
+    const ville = document.getElementById("filtreVille").value;
+    if (!ville) {
+        showAlert("Veuillez entrer une ville !", "error");
+        return;
+    }
+    const response = await fetch(`/exports/gpx/${ville}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${ville}.gpx`;
+        a.click();
+    } else {
+        showAlert("Erreur lors de l'export GPX !", "error");
+    }
+}
+
+    // Charger au démarrage
+    chargerPatrimoines();
+</script>
+</body>
+</html>

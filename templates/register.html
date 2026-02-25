@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Créer un compte</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial; background: #1a1a2e; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .card { background: #16213e; padding: 40px; border-radius: 12px; width: 380px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo h1 { color: #e94560; font-size: 24px; }
+        .logo p { color: #aaa; font-size: 13px; margin-top: 5px; }
+        label { color: #aaa; font-size: 13px; display: block; margin-bottom: 5px; }
+        input { width: 100%; padding: 12px; background: #0f3460; border: 1px solid #e94560; border-radius: 8px; color: white; font-size: 14px; margin-bottom: 20px; outline: none; }
+        input:focus { border-color: #fff; }
+        button { width: 100%; padding: 12px; background: #e94560; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #c73652; }
+        .link { text-align: center; margin-top: 20px; color: #aaa; font-size: 13px; }
+        .link a { color: #e94560; text-decoration: none; }
+        #message { text-align: center; font-size: 13px; margin-bottom: 10px; }
+        .success { color: #2ecc71; }
+        .error { color: #e94560; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo">
+            <h1>🏛️ PatrimoineApp</h1>
+            <p>Créer un compte</p>
+        </div>
+        <p id="message"></p>
+        <label>Nom d'utilisateur</label>
+        <input type="text" id="username" placeholder="Choisissez un nom d'utilisateur" />
+        <label>Email</label>
+        <input type="email" id="email" placeholder="Entrez votre email" />
+        <label>Mot de passe</label>
+        <input type="password" id="password" placeholder="Choisissez un mot de passe" />
+        <button onclick="register()">Créer le compte</button>
+        <div class="link">
+            Déjà un compte ? <a href="/page/login">Se connecter</a>
+        </div>
+    </div>
+    <script>
+        async function register() {
+            const data = {
+                username: document.getElementById("username").value,
+                email: document.getElementById("email").value,
+                password: document.getElementById("password").value
+            };
+
+            const response = await fetch("/users/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            const msg = document.getElementById("message");
+
+            if (response.ok) {
+                msg.className = "success";
+                msg.innerText = "Compte créé avec succès ! Redirection...";
+                setTimeout(() => window.location.href = "/page/login", 2000);
+            } else {
+                msg.className = "error";
+                msg.innerText = result.detail;
+            }
+        }
+    </script>
+</body>
+</html>
